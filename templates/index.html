@@ -264,20 +264,29 @@
     let activeIndex = -1;
     let currentFiltered = [...products];
 
+    function scrollToActive() {
+        const activeItem = suggestionList.querySelector('.suggestion-item.active');
+        if (activeItem) {
+            activeItem.scrollIntoView({ block: 'nearest' });
+        }
+    }
+
     function renderSuggestions(filtered) {
         suggestionList.innerHTML = '';
         currentFiltered = filtered;
         
         if (filtered.length === 0) {
-            suggestionList.innerHTML = `
-                <div class="suggestion-item">
-                    <div class="suggestion-icon" style="background: #f3f4f6; color: #9ca3af;">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </div>
-                    <div class="suggestion-text">Search for "${searchInput.value}"</div>
-                    <div class="suggestion-action">↵</div>
+            const div = document.createElement('div');
+            div.className = `suggestion-item ${activeIndex === 0 ? 'active' : ''}`;
+            div.onclick = () => submitForm();
+            div.innerHTML = `
+                <div class="suggestion-icon" style="background: #f3f4f6; color: #9ca3af;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
                 </div>
+                <div class="suggestion-text">Search for "${searchInput.value}"</div>
+                <div class="suggestion-action">↵</div>
             `;
+            suggestionList.appendChild(div);
             return;
         }
 
@@ -329,34 +338,50 @@
     });
 
     searchInput.addEventListener('keydown', (e) => {
-        const items = suggestionList.querySelectorAll('.suggestion-item');
-        
         if (e.key === 'ArrowDown') {
             e.preventDefault();
-            if (activeIndex < currentFiltered.length - 1 || (currentFiltered.length === 0 && activeIndex < 0)) {
+            const maxIndex = currentFiltered.length > 0 ? currentFiltered.length - 1 : 0;
+            if (activeIndex < maxIndex) {
                 activeIndex++;
                 renderSuggestions(currentFiltered);
+                scrollToActive();
             }
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
             if (activeIndex > 0) {
                 activeIndex--;
                 renderSuggestions(currentFiltered);
+                scrollToActive();
+            } else if (activeIndex === 0) {
+                activeIndex = -1;
+                renderSuggestions(currentFiltered);
             }
         } else if (e.key === 'Enter') {
             e.preventDefault();
-            if (activeIndex >= 0 && currentFiltered[activeIndex]) {
-                searchInput.value = currentFiltered[activeIndex].name;
+            if (activeIndex >= 0) {
+                if (currentFiltered.length > 0 && currentFiltered[activeIndex]) {
+                    searchInput.value = currentFiltered[activeIndex].name;
+                }
             }
             submitForm();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            searchInput.value = '';
+            searchInput.blur();
+            searchInput.dispatchEvent(new Event('input'));
         }
     });
 
-    // Handle Cmd+K / Ctrl+K
+    // Handle Cmd+K / Ctrl+K and global Escape
     document.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
             e.preventDefault();
             searchInput.focus();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            searchInput.value = '';
+            searchInput.blur();
+            searchInput.dispatchEvent(new Event('input'));
         }
     });
 
