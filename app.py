@@ -174,6 +174,17 @@ def parse_reviews_from_html(product_html):
 
             if not comment or len(comment) < 5: continue
 
+            # Robust deduplication by comparing alphanumeric content
+            norm_comment = re.sub(r'\W+', '', comment).lower()
+            is_duplicate = False
+            for r in reviews:
+                if re.sub(r'\W+', '', r["Comment"]).lower() == norm_comment:
+                    is_duplicate = True
+                    break
+            
+            if is_duplicate:
+                continue
+
             reviews.append({
                 "Name": name,
                 "Rating": rating,
